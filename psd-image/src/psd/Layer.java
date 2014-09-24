@@ -22,9 +22,12 @@ import psd.parser.BlendMode;
 import psd.parser.layer.*;
 import psd.parser.layer.additional.*;
 import psd.parser.layer.additional.effects.PSDEffect;
+import psd.parser.object.PsdDescriptor;
+import psd.parser.object.PsdTextData;
 import psd.util.BufferedImageBuilder;
 
 import java.awt.image.*;
+import java.lang.reflect.Array;
 import java.util.*;
 
 public class Layer implements LayersContainer {
@@ -46,6 +49,10 @@ public class Layer implements LayersContainer {
     private BlendMode layerBlendMode;
     private BlendingRanges layerBlendingRanges;
     private Mask mask;
+    
+    private boolean isText = false;
+    private TextData textData = null;
+    
 
     private ArrayList<Layer> layers = new ArrayList<Layer>();
 
@@ -124,6 +131,37 @@ public class Layer implements LayersContainer {
                 name = unicodeName;
             }
         }));
+        
+        parser.putAdditionalInformationParser(LayerTypeToolParser.TAG, new LayerTypeToolParser(new LayerTypeToolHandler() {
+            @Override
+            public void typeToolDescriptorParsed(int version, PsdDescriptor descriptor) {
+                setText(true);
+                setTextData(new TextData());
+                if(descriptor.containsKey("Txt")){
+                	getTextData().setText(descriptor.get("Txt").toString());
+		        }
+                
+                // set default font size
+                Double fontSize = 12.0;
+                ArrayList fillcolor = null;
+                try {
+                	// the font size is a little too deep inside the structure
+                	fontSize = (Double)((HashMap)((HashMap)((HashMap)((ArrayList)((HashMap)((HashMap)((PsdTextData)descriptor.get("EngineData")).getProperties().get("EngineDict")).get("StyleRun")).get("RunArray")).get(0)).get("StyleSheet")).get("StyleSheetData")).get("FontSize");
+                	fillcolor = (ArrayList)((HashMap)((HashMap)((HashMap)((HashMap)((ArrayList)((HashMap)((HashMap)((PsdTextData)descriptor.get("EngineData")).getProperties().get("EngineDict")).get("StyleRun")).get("RunArray")).get(0)).get("StyleSheet")).get("StyleSheetData")).get("FillColor")).get("Values");
+                } catch (Exception e){}
+                
+                getTextData().setFontSize(fontSize.intValue());
+                getTextData().setColor(fillcolor);
+                
+                
+            }
+
+			@Override
+			public void typeToolTransformParsed(Matrix transform) {
+				// TODO Auto-generated method stub
+				
+			}
+        }));
     }
 
     public void addLayer(Layer layer) {
@@ -160,7 +198,15 @@ public class Layer implements LayersContainer {
     public int getY() {
         return top;
     }
-
+    
+    public int getRight() {
+    	return right;
+    }
+    
+    public int getBottom() {
+    	return bottom;
+    }
+    
     public int getWidth() {
         return right - left;
     }
@@ -217,4 +263,20 @@ public class Layer implements LayersContainer {
     public void setMask(Mask mask) {
         this.mask = mask;
     }
+
+	public boolean isText() {
+		return isText;
+	}
+
+	public void setText(boolean isText) {
+		this.isText = isText;
+	}
+
+	public TextData getTextData() {
+		return textData;
+	}
+
+	public void setTextData(TextData textData) {
+		this.textData = textData;
+	}
 }

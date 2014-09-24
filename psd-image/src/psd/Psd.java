@@ -31,8 +31,8 @@ public class Psd implements LayersContainer {
     private Layer baseLayer;
     private String name;
 
-    public Psd(InputStream stream) throws IOException {
-        name = "unknown name";
+    public Psd(InputStream stream, String filename) throws IOException {
+        name = filename;
 
 		PsdFileParser parser = new PsdFileParser();
 		parser.getHeaderSectionParser().setHandler(new HeaderSectionHandler() {
@@ -172,4 +172,24 @@ public class Psd implements LayersContainer {
     public Layer getBaseLayer() {
         return this.baseLayer;
     }
+
+	@Override
+	public int getX() {
+		return 0;
+	}
+
+	@Override
+	public int getY() {
+		return 0;
+	}
+
+	@Override
+	public int getRight() {
+		return getWidth();
+	}
+
+	@Override
+	public int getBottom() {
+		return getHeight();
+	}
 }
